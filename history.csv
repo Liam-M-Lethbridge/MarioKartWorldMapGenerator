@@ -1,19 +1,73 @@
-index,map_name
-21,Rainbow Road
-3,Bowser's Castle
-19,Peach Beach
-10,DK Pass
-29,Whistlestop Summit
-8,Desert Hills
-15,Koopa Troopa Beach
-27,Wario Stadium
-23,Shy Guy Bazaar
-26,Toad's Factory
-25,Starview Peak
-11,DK Spaceport
-6,Crown City
-0,Acorn Heights
-7,Dandelion Depths
-18,Moo Moo Meadows
-29,Whistlestop Summit
-10,DK Pass
+maps,index,map_name
+,21.0,Rainbow Road
+,18.0,Moo Moo Meadows
+,9.0,Dino Dino Jungle
+,2.0,Boo Cinema
+,22.0,Salty Salty Speedway
+,12.0,Dry Bones Burnout
+,23.0,Shy Guy Bazaar
+,8.0,Desert Hills
+,26.0,Toad's Factory
+,20.0,Peach Stadium
+,0.0,Acorn Heights
+,19.0,Peach Beach
+,14.0,Great ? Block Ruins
+,3.0,Bowser's Castle
+,7.0,Dandelion Depths
+,10.0,DK Pass
+,5.0,Choco Mountain
+,25.0,Starview Peak
+,26.0,Toad's Factory
+,28.0,Wario's Galleon
+,16.0,Mario Bros. Circuit
+,6.0,Crown City
+,23.0,Shy Guy Bazaar
+,24.0,Sky-High Sundae
+,13.0,Faraway Oasis
+,18.0,Moo Moo Meadows
+,14.0,Great ? Block Ruins
+,20.0,Peach Stadium
+,15.0,Koopa Troopa Beach
+,19.0,Peach Beach
+,19.0,Peach Beach
+,6.0,Crown City
+,17.0,Mario Circuit
+,2.0,Boo Cinema
+,22.0,Salty Salty Speedway
+,25.0,Starview Peak
+,10.0,DK Pass
+,16.0,Mario Bros. Circuit
+,4.0,Cheep Cheep Falls
+,0.0,Acorn Heights
+,27.0,Wario Stadium
+,9.0,Dino Dino Jungle
+,29.0,Whistlestop Summit
+,3.0,Bowser's Castle
+,22.0,Salty Salty Speedway
+,5.0,Choco Mountain
+,12.0,Dry Bones Burnout
+,23.0,Shy Guy Bazaar
+,29.0,Whistlestop Summit
+,20.0,Peach Stadium
+,2.0,Boo Cinema
+,13.0,Faraway Oasis
+,14.0,Great ? Block Ruins
+,6.0,Crown City
+,21.0,Rainbow Road
+,24.0,Sky-High Sundae
+,25.0,Starview Peak
+,11.0,DK Spaceport
+,28.0,Wario's Galleon
+,8.0,Desert Hills
+,0.0,Acorn Heights
+,27.0,Wario Stadium
+,19.0,Peach Beach
+,10.0,DK Pass
+,23.0,Shy Guy Bazaar
+,26.0,Toad's Factory
+,1.0,Airship Fortress
+,5.0,Choco Mountain
+,22.0,Salty Salty Speedway
+,17.0,Mario Circuit
+,29.0,Whistlestop Summit
+,13.0,Faraway Oasis

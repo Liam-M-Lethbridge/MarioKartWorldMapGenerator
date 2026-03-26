@@ -73,7 +73,6 @@ class RandomMapPicker():
             taken = self.history.iloc[-take:]
         else:
             taken = self.history
-
         
         # set the last cooldown_count maps to 0
         for i in range(min(self.cooldown_count-1, len(taken))):
@@ -82,15 +81,11 @@ class RandomMapPicker():
         # set the rest of the maps to relevant soft_prob
         for i in range(min(self.soft_int, max(len(taken)-self.cooldown_count+1,0))):
             self.maps.loc[self.maps["index"] == int(taken.iloc[-(i+self.cooldown_count)]["index"]), "prob_value"] = (i+1)*self.prob_value_increment
-            
+        
+        self.calc_cum_sum()
         
 
 if __name__ == "__main__":
-    rmp = RandomMapPicker(6,6)
-    # print(rmp.maps)
+    rmp = RandomMapPicker(12,12)
     print(rmp.maps)
-    rmp.precompute_game(6)
-    print(rmp.history)
-    print(rmp.maps)
-    # for i in range(10):
-        # print(rmp.choose_map())
+    rmp.precompute_game(12)

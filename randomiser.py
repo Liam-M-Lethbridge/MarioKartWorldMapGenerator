@@ -5,8 +5,8 @@ import os
 class RandomMapPicker():
     def __init__(self, cooldown_count = 6, soft_int = 10, permanent = True):
         self.cooldown_count = cooldown_count
-        self.soft_int = soft_int
-        self.prob_value_increment = 1/soft_int
+        self.soft_int = soft_int+1
+        self.prob_value_increment = 1/self.soft_int
         self.get_maps()
         self.total = len(self.maps)
 
@@ -60,12 +60,12 @@ class RandomMapPicker():
         for i in range(n_races):
             print(self.choose_map())
 
-    def save_to_csv(self):
-        self.history.to_csv("history.csv", index=False)
+    def save_to_csv(self, path = "history.csv"):
+        self.history.to_csv(path, index=False)
 
-    def retrieve_history(self):
-        if os.path.exists("history.csv"):
-            self.history = pd.read_csv("history.csv")
+    def retrieve_history(self, path = "history.csv"):
+        if os.path.exists(path):
+            self.history = pd.read_csv(path)
         else:
             self.history = pd.DataFrame(columns=["maps"])
         take = self.cooldown_count-1+self.soft_int
@@ -75,17 +75,27 @@ class RandomMapPicker():
             taken = self.history
         
         # set the last cooldown_count maps to 0
-        for i in range(min(self.cooldown_count-1, len(taken))):
-            self.maps.loc[self.maps["index"] == int(taken.iloc[-(1+i)]["index"]), "cooldown_counter"] = self.cooldown_count-i-1
-            self.maps.loc[self.maps["index"] == int(taken.iloc[-(1+i)]["index"]), "prob_value"] = 0
+        for i in range(min(self.cooldown_count, len(taken))):
+            self.maps.loc[self.maps["index"] == int(taken.iloc[-(i+1)]["index"]), "cooldown_counter"] = self.cooldown_count-i-1
+            self.maps.loc[self.maps["index"] == int(taken.iloc[-(i+1)]["index"]), "prob_value"] = 0
+        # self.maps.loc[self.maps["index"] == int(taken.iloc[-(1+self.cooldown_count)]["index"]), "prob_value"] = 0
+        
         # set the rest of the maps to relevant soft_prob
-        for i in range(min(self.soft_int, max(len(taken)-self.cooldown_count+1,0))):
-            self.maps.loc[self.maps["index"] == int(taken.iloc[-(i+self.cooldown_count)]["index"]), "prob_value"] = (i+1)*self.prob_value_increment
+        for i in range(min(self.soft_int, max(len(taken)-self.cooldown_count,0))):
+            self.maps.loc[self.maps["index"] == int(taken.iloc[-(i+self.cooldown_count+1)]["index"]), "prob_value"] = (i+1)*self.prob_value_increment
         
         self.calc_cum_sum()
         
+def test_retrieve_hist():
+    rmp = RandomMapPicker(5,5, False)
+    rmp.retrieve_history("test.csv")
+    assert((rmp.maps.loc[rmp.maps["index"] < 5, "prob_value"] <1 ).all())
+    assert((rmp.maps.loc[rmp.maps["index"] >= 5].loc[rmp.maps["index"] < 10, "prob_value"] == 0).all())
+        
+
+
 
 if __name__ == "__main__":
-    rmp = RandomMapPicker(12,12)
+    rmp = RandomMapPicker(6,12)
     print(rmp.maps)
-    rmp.precompute_game(12)
+    rmp.precompute_game(6)

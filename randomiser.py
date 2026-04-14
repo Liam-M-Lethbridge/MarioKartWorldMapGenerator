@@ -93,14 +93,16 @@ class RandomMapPicker():
         else:
             taken = self.history
         
+        for i in range(min(self.soft_int, max(len(taken)-self.cooldown_count,0))):
+            self.maps.loc[self.maps["index"] == int(taken.iloc[-(i+self.cooldown_count+1)]["index"]), "soft_counter"] = self.soft_int-i
+
         # set the last cooldown_count maps to 0
         for i in range(min(self.cooldown_count, len(taken))):
             self.maps.loc[self.maps["index"] == int(taken.iloc[-(i+1)]["index"]), "cooldown_counter"] = self.cooldown_count-i
+            self.maps.loc[self.maps["index"] == int(taken.iloc[-(i+1)]["index"]), "soft_counter"] = 0
             self.maps.loc[self.maps["index"] == int(taken.iloc[-(i+1)]["index"]), "prob_value"] = 0
 
         # self.maps.loc[self.maps["index"] == int(taken.iloc[-(1+self.cooldown_count)]["index"]), "prob_value"] = 0
-        for i in range(min(self.soft_int, max(len(taken)-self.cooldown_count,0))):
-            self.maps.loc[self.maps["index"] == int(taken.iloc[-(i+self.cooldown_count+1)]["index"]), "soft_counter"] = self.soft_int-i
         
         # set the rest of the maps to relevant soft_prob
         self.calc_probs()
@@ -114,5 +116,6 @@ def test_retrieve_hist():
 
 if __name__ == "__main__":
     rmp = RandomMapPicker(6,12)
-    print(rmp.maps)
+    # print(rmp.maps)
+    rmp.precompute_game(6)
     # test_retrieve_hist()

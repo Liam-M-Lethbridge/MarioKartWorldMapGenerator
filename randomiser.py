@@ -3,20 +3,28 @@ import numpy as np
 import os
 
 class RandomMapPicker():
-    def __init__(self, cooldown_count=6, soft_int=10, permanent=True, reset_modifier_type="exponential"):
+    def __init__(self, cooldown_count:int=6, soft_int:int=10, permanent:int=True, reset_modifier_type:str="exponential", history_saved:int = 30):
+        """Args:
+            cooldown_count: the number of races to play before this race is possible again.
+            soft_int: the number of races it takes for the prob_value to return to normal after the cooldown count.
+            permanent: when True, histroy is loaded.
+            reset_modifier_type: either 'exponential' or 'linear'. Denotes the trend the prob_value takes to return to normal.
+            history_saved: the number of races saved in history.
+        """
         self.cooldown_count = cooldown_count
         self.soft_int = soft_int
         self.prob_value_increment = 1/self.soft_int
         self.reset_modifier_type = reset_modifier_type
+        self.history_saved = history_saved
         self.get_maps()
         self.total = len(self.maps)
-
+        assert(reset_modifier_type == "exponential" or reset_modifier_type == "linear")
         self.permanent = permanent
         if permanent:
             self.retrieve_history()
 
     def calc_probs(self):
-        """This method will calculate probability values for each course according to the reset modifier type"""
+        """This method will calculate probability values for each course according to the reset modifier type."""
         if self.reset_modifier_type == "linear":
             self.maps.loc[self.maps["soft_counter"] > 0, "prob_value"]=self.maps.loc[self.maps["soft_counter"] > 0, "soft_counter"]/self.soft_int 
         elif self.reset_modifier_type == "exponential":
@@ -75,6 +83,7 @@ class RandomMapPicker():
             print(self.choose_map())
 
     def save_to_csv(self, path = "history.csv"):
+        self.history = self.history.iloc[-self.history_saved:]
         self.history.to_csv(path, index=False)
 
     def retrieve_history(self, path = "history.csv"):

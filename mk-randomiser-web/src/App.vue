@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 const maps = ref([]);
+let current_map = ref("")
 
 onMounted(async () => {
   getProbs();
@@ -8,14 +9,13 @@ onMounted(async () => {
 
 async function getProbs(){
   try {
-    const response = await fetch('http://localhost:3000/api/maps')
+    const response = await fetch('http://localhost:3000/api/maps');
 
     if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`)
+      throw new Error(`HTTP error ${response.status}`);
 
     }
-
-    maps.value = await response.json()
+    maps.value = await response.json();
   } catch (err) {
     console.error("Fetch failed:", err)
   }
@@ -24,9 +24,9 @@ async function getProbs(){
 async function generateMap(){
   try{
     const response = await fetch('http://localhost:3000/api/generate_map')
-
+    current_map.value = await response.text();
     if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`)
+      throw new Error(`HTTP error ${response.status}`);
     }
     getProbs();
     return response;
@@ -34,6 +34,19 @@ async function generateMap(){
     console.error("Fetch failed:", err)
   }
   
+}
+
+async function resetHistory(){
+  try{
+    const response = await fetch('http://localhost:3000/api/reset_history')
+
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
+    getProbs();
+  } catch (err) {
+    console.error("Fetch failed");
+  }
 }
 
 const selected_tab = ref("Map generator");
@@ -52,6 +65,7 @@ const selected_tab = ref("Map generator");
     <div>
       <div class="content" v-if="selected_tab=='Map generator'">
           <button @click="generateMap()">Generate map</button>
+          <div class="map" v-if="current_map.length >0">{{ current_map }}</div>
       </div>
 
       <div class="content" v-if="selected_tab=='Set generator'">
@@ -77,7 +91,7 @@ const selected_tab = ref("Map generator");
       </div>
 
       <div class="content" v-if="selected_tab=='History'">
-          history
+          <button @click="resetHistory()">reset History</button>
       </div>
     </div>
   </div>
@@ -113,6 +127,10 @@ const selected_tab = ref("Map generator");
   justify-content:space-around;
   align-items: center;
 
+}
+button{
+  height: fit-content;
+  padding: 4px;
 }
 .tab{
   border: 2px solid #000000;

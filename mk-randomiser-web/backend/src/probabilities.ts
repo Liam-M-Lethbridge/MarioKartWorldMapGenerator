@@ -1,7 +1,7 @@
 import { readVars } from "./data.ts";
 export function assignProbabilities(probs: any[]) {
     probs.forEach((element) => {
-        element.prob = 1;
+        element.prob = 1.0;
         element.since_last_played = 30;
     });
 
@@ -9,7 +9,7 @@ export function assignProbabilities(probs: any[]) {
 }
 
 export function assignCumProbs(probs: any[]){
-    let cum = 0;
+    let cum = 0.0;
     probs.forEach(element => {
         cum += element["prob"];
         element["cumulative_probs"] = cum;
@@ -18,14 +18,16 @@ export function assignCumProbs(probs: any[]){
 }
 
 export function calcProbabilities(probs: any[], cooldown: number, probType:string){
+    console.log(cooldown)
     probs.forEach(element => {
         if (element["since_last_played"] < cooldown){
-            element["prob"] = 0;
+            console.log(element["map_name"], " should be zero")
+            element["prob"] = 0.0;
         }else if(element["since_last_played"] < cooldown*2){
-
+                console.log(element["map_name"], " should be nearly zero")
             // if linear rejoining
             if (probType == "linear"){
-                element["prob"] = (element["since_last_played"]-cooldown)/cooldown;
+                element["prob"] = (element["since_last_played"]-cooldown+1)/(cooldown+1);
             }
             // if exponential rejoining
             else if (probType == "exponential"){
@@ -34,35 +36,38 @@ export function calcProbabilities(probs: any[], cooldown: number, probType:strin
             else{
                 console.error("Invalid value for probType argument");
             }
-        };
+        }else{
+            element["prob"] = 1.0;
+        }
     });
     probs = assignCumProbs(probs);
 }
 
-export function choose(probs: any[]){
-    const max_prob = probs[-1]["cumulative_probs"];
+export async function choose(probs: any[]){
+    const max_prob = probs.slice(-1)[0]["cumulative_probs"];
     const n = Math.random()*max_prob;
+
     let index = 0;
-    probs.forEach(element => {
+    probs.forEach(async element => {
         if (n > element["cumulative_probs"]){
             index +=1;
-        }else{
-            const vars = readVars()
-            
-            probs = update_table(probs, index);
-            return index;
         }
     });
+    probs = await update_table(probs, index);
+    console.log(probs.slice(index, index+1))
+    return probs.slice(index, index+1)[0]["map_name"];
 }
 
-function update_table(probs: any[], index: number){
+async function update_table(probs: any[], index: number){
     probs.forEach(element => {
         if (element["since_last_played"] < 30){
-        element["since_last_played"] +=1
+            element["since_last_played"] +=1
         }
     });
     probs[index]["since_last_played"] = 0;
 
-    calcProbabilities()
+    const vars = await readVars();
+    
+    calcProbabilities(probs, Number(vars["cooldown"]), vars["probType"])
     return probs;
 }

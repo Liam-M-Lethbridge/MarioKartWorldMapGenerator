@@ -21,18 +21,44 @@ export function getData(): Promise<any[]> {
     });
 }
 
-export function readVars(){
+export function readVars(): Promise<any[]>{
     return new Promise((resolve, reject) => {
-        let vars: any[] = [];
-        fs.readFile("../data/vars.json", (error, data) => {
-        if (error) {
-            console.error(error);
-            throw error;
+        fs.readFile("./data/vars.json", "utf-8", (error, data) => {
+
+            if (error) {
+                reject(error);
+                return;
             }
-            vars = JSON.parse(data);
-        })
-        resolve(vars)
+
+            // if the file is empty
+            if (!data.trim()) {
+                resolve([]);
+            }
+
+            try {
+                const probs = JSON.parse(data);
+                resolve(probs);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    });
+}
+
+
+export function saveVars(cooldown:number, probType: string){
+    const data = JSON.stringify({
+        'cooldown':cooldown,
+        'probType': probType
     })
+    fs.writeFile("./data/vars.json", data, (error) => {
+        if (error) {
+            // logging the error
+            console.error(error);
+            
+            throw error;
+        }
+    });
 }
 
 export function saveProbs(table: any){
@@ -51,21 +77,32 @@ export function saveProbs(table: any){
 
 export async function readProbs(): Promise<any[]> {
     return new Promise((resolve, reject) => {
-        let probs: any[] = [];
-        fs.readFile("./data/probs.json", (error, data) => {
-        if (error) {
-            console.error(error);
-            throw error;
+        fs.readFile("./data/probs.json", "utf-8", (error, data) => {
+
+            if (error) {
+                reject(error);
+                return;
             }
-            probs = JSON.parse(data);
-        })
-        resolve(probs)
-    })
+
+            // if the file is empty
+            if (!data.trim()) {
+                resolve([]);
+            }
+
+
+            try {
+                const probs = JSON.parse(data);
+                resolve(probs);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    });
 }
 
 export async function startupProcedure(){
-    let probs: any[] = [];
-    if(fs.existsSync("../data/probs.json")){
+    var probs: any[] = [];
+    if(fs.existsSync("./data/probs.json")){
         probs = await readProbs();
     }
     else{
@@ -74,5 +111,20 @@ export async function startupProcedure(){
         probs = assignCumProbs(probs);
         await saveProbs(probs);
     }
+    if(probs.length == 0){
+        probs = await getData();
+        probs = assignProbabilities(probs);
+        probs = assignCumProbs(probs);
+        await saveProbs(probs);
+    }
+
+    if(! fs.existsSync("./data/vars.json")){
+        saveVars(6, 'linear')
+    }else{
+        if((await readVars()).length == 0){
+            saveVars(6, 'linear')
+        }
+    }
+
     return probs;
 }

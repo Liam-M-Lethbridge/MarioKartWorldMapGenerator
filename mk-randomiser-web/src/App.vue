@@ -2,10 +2,22 @@
 import { ref, onMounted } from 'vue';
 const maps = ref([]);
 let current_map = ref("")
+let history = ref([]);
 
 onMounted(async () => {
-  getProbs();
+  await getProbs();
+  writeHistory();
 })
+
+function writeHistory(){
+  for(let i = 29; i>=0; i--){
+    maps.value.forEach(element => {
+      if(element["since_last_played"] == i){
+        history.value.push(element["map_name"])
+      }
+    });
+  }
+}
 
 async function getProbs(){
   try {
@@ -24,10 +36,13 @@ async function getProbs(){
 async function generateMap(){
   try{
     const response = await fetch('http://localhost:3000/api/generate_map')
-    current_map.value = await response.text();
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
+    current_map.value = await response.text();
+    current_map.value = current_map.value.substring(1, current_map.value.length-1)
+    history.value.push(current_map.value);
+    console.log(current_map.value);
     getProbs();
     return response;
   } catch (err) {
@@ -47,6 +62,8 @@ async function resetHistory(){
   } catch (err) {
     console.error("Fetch failed");
   }
+  history.value = [];
+  current_map.value = "";
 }
 
 const selected_tab = ref("Map generator");
@@ -65,14 +82,16 @@ const selected_tab = ref("Map generator");
     <div>
       <div class="content" v-if="selected_tab=='Map generator'">
           <button @click="generateMap()">Generate map</button>
-          <div class="map" v-if="current_map.length >0">{{ current_map }}</div>
-      </div>
-
+          <!-- <div class="map_box"> -->
+            <div class="map">
+              <div  v-if="current_map.length >0">{{ current_map }}</div>      
+            </div>
+        </div>
       <div class="content" v-if="selected_tab=='Set generator'">
           set generator
       </div>
 
-      <div class="content" v-if="selected_tab=='Probabilities'">
+      <div class="tablecontent" v-if="selected_tab=='Probabilities'">
         <div class="column">
           <div v-for="element in maps" class="cell">
             <div>{{element["map_name"]}}</div>
@@ -92,6 +111,7 @@ const selected_tab = ref("Map generator");
 
       <div class="content" v-if="selected_tab=='History'">
           <button @click="resetHistory()">reset History</button>
+          <div v-for="value in history">{{ value }}</div>
       </div>
     </div>
   </div>
@@ -144,7 +164,29 @@ button{
   background-color: #00dddd;
 }
 
+.map{
+  min-height: 500px;
+  background:url(../src/assets/map.svg);
+  aspect-ratio: 1;
+  border-left: 8px solid #777777 ;
+  border-bottom: 8px solid #777777 ;
+  border-top: 8px solid #ee1c25 ;
+  border-right: 8px solid #ee1c25 ;
+  border-radius: 16px;
+  margin-bottom: 5%;
+  text-align: center;
+}
 .content{
+  display: flex;
+  width: 100vw;
+  min-height: 90vh;
+  height: fit-content;
+  background-color: #ffffff;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+.tablecontent{
   display: flex;
   width: 100vw;
   min-height: 90vh;

@@ -4,7 +4,7 @@ const maps = ref([]);
 let current_map = ref("")
 let history = ref([]);
 
-  const coords = {
+const coords = {
   "Acorn Heights":[240,80],
   "Airship Fortress":[60,170],
   "Boo Cinema":[305,105],
@@ -12,15 +12,15 @@ let history = ref([]);
   "Cheep Cheep Falls":[305,255],
   "Choco Mountain":[180,255],
   "Crown City":[175,340],
-  "Dandelion Depths":[300,180],
+  "Dandelion Depths":[275,185],
   "Desert Hills":[55,330],
-  "Dino Dino Jungle":[315,400],
+  "Dino Dino Jungle":[315,410],
   "DK Pass":[355,220],
   "DK Spaceport":[185,400],
-  "Dry Bones Burnout":[100,110],
+  "Dry Bones Burnout":[180,110],
   "Faraway Oasis":[295,330],
   "Great ? Block Ruins":[375,380],
-  "Koopa Troopa Beach":[240,380],
+  "Koopa Troopa Beach":[235,380],
   "Mario Bros. Circuit":[105,295],
   "Mario Circuit":[240,150],
   "Moo Moo Meadows":[240,215],
@@ -31,10 +31,42 @@ let history = ref([]);
   "Shy Guy Bazaar":[55,250],
   "Sky-High Sundae":[415,185],
   "Starview Peak":[360,135],
-  "Toad's Factory":[185,185],
+  "Toad's Factory":[180,180],
   "Wario Stadium":[120,220],
   "Wario's Galleon":[420,270],
   "Whistlestop Summit":[110,380]
+}
+const colours = {
+  "Acorn Heights":"#a4c837",
+  "Airship Fortress":"#efa02f",
+  "Boo Cinema":"#3e7cb7",
+  "Bowser's Castle":"#d6fa19",
+  "Cheep Cheep Falls":"#FFFFFF",
+  "Choco Mountain":"#d6fa19",
+  "Crown City":"#FFFFFF",
+  "Dandelion Depths":"#ee1c25",
+  "Desert Hills":"#d6fa19",
+  "Dino Dino Jungle":"#ee1c25",
+  "DK Pass":"#55cdfd",
+  "DK Spaceport":"#ee1c25",
+  "Dry Bones Burnout":"#d6fa19",
+  "Faraway Oasis":"#FFFFFF",
+  "Great ? Block Ruins":"#d6fa19",
+  "Koopa Troopa Beach":"#d6fa19",
+  "Mario Bros. Circuit":"#ee1c25",
+  "Mario Circuit":"#a4c837",
+  "Moo Moo Meadows":"#FFFFFF",
+  "Peach Beach":"#d6fa19",
+  "Peach Stadium":"#55cdfd",
+  "Rainbow Road":"#d6fa19",
+  "Salty Salty Speedway":"#d6fa19",
+  "Shy Guy Bazaar":"#ee1c25",
+  "Sky-High Sundae":"#d6fa19",
+  "Starview Peak":"#55cdfd",
+  "Toad's Factory":"#ee1c25",
+  "Wario Stadium":"#d6fa19",
+  "Wario's Galleon":"#55cdfd",
+  "Whistlestop Summit":"#ee1c25"
 }
 
 onMounted(async () => {
@@ -117,10 +149,10 @@ const selected_tab = ref("Map generator");
           <button @click="generateMap()">Generate map</button>
           <!-- <div class="map_box"> -->
             <div class="map">
-              <!-- <div  v-if="current_map.length >0">{{ current_map }}</div> -->
+              <div v-if="current_map.length >0" class="map_names">{{ current_map }}</div>
               <svg v-if="current_map.length >0" height="480" width="480">
-                <circle r="8" :cx="coords[current_map][0]" :cy="coords[current_map][1]" fill="#00000000" stroke="#FF0000" stroke-width="3"/>
-                <circle r="3" :cx="coords[current_map][0]" :cy="coords[current_map][1]" fill="#FF0000"/>
+                <circle r="8" :cx="coords[current_map][0]" :cy="coords[current_map][1]" fill="#00000000" :stroke="colours[current_map]" stroke-width="3"/>
+                <circle r="3" :cx="coords[current_map][0]" :cy="coords[current_map][1]" :fill="colours[current_map]"/>
               </svg>
             </div>
         </div>
@@ -200,7 +232,12 @@ button{
 .tab:hover{
   background-color: #00dddd;
 }
-
+.map_names{
+  position: absolute; 
+  top: 0%;
+  width: 100%;
+  background-color: whitesmoke;
+}
 .map{
   display: flex;
   flex-direction: column;
@@ -216,6 +253,7 @@ button{
   text-align: center;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 .content{
   display: flex;

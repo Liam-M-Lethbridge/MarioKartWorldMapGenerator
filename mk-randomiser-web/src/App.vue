@@ -4,6 +4,39 @@ const maps = ref([]);
 let current_map = ref("")
 let history = ref([]);
 
+  const coords = {
+  "Acorn Heights":[240,80],
+  "Airship Fortress":[60,170],
+  "Boo Cinema":[305,105],
+  "Bowser's Castle":[125,115],
+  "Cheep Cheep Falls":[305,255],
+  "Choco Mountain":[180,255],
+  "Crown City":[175,340],
+  "Dandelion Depths":[300,180],
+  "Desert Hills":[55,330],
+  "Dino Dino Jungle":[315,400],
+  "DK Pass":[355,220],
+  "DK Spaceport":[185,400],
+  "Dry Bones Burnout":[100,110],
+  "Faraway Oasis":[295,330],
+  "Great ? Block Ruins":[375,380],
+  "Koopa Troopa Beach":[240,380],
+  "Mario Bros. Circuit":[105,295],
+  "Mario Circuit":[240,150],
+  "Moo Moo Meadows":[240,215],
+  "Peach Beach":[420,330],
+  "Peach Stadium":[240,285],
+  "Rainbow Road":[240,340],
+  "Salty Salty Speedway":[360,295],
+  "Shy Guy Bazaar":[55,250],
+  "Sky-High Sundae":[415,185],
+  "Starview Peak":[360,135],
+  "Toad's Factory":[185,185],
+  "Wario Stadium":[120,220],
+  "Wario's Galleon":[420,270],
+  "Whistlestop Summit":[110,380]
+}
+
 onMounted(async () => {
   await getProbs();
   writeHistory();
@@ -84,7 +117,11 @@ const selected_tab = ref("Map generator");
           <button @click="generateMap()">Generate map</button>
           <!-- <div class="map_box"> -->
             <div class="map">
-              <div  v-if="current_map.length >0">{{ current_map }}</div>      
+              <!-- <div  v-if="current_map.length >0">{{ current_map }}</div> -->
+              <svg v-if="current_map.length >0" height="480" width="480">
+                <circle r="8" :cx="coords[current_map][0]" :cy="coords[current_map][1]" fill="#00000000" stroke="#FF0000" stroke-width="3"/>
+                <circle r="3" :cx="coords[current_map][0]" :cy="coords[current_map][1]" fill="#FF0000"/>
+              </svg>
             </div>
         </div>
       <div class="content" v-if="selected_tab=='Set generator'">
@@ -165,7 +202,9 @@ button{
 }
 
 .map{
-  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  min-height: 516px;
   background:url(../src/assets/map.svg);
   aspect-ratio: 1;
   border-left: 8px solid #777777 ;
@@ -175,6 +214,8 @@ button{
   border-radius: 16px;
   margin-bottom: 5%;
   text-align: center;
+  align-items: center;
+  justify-content: center;
 }
 .content{
   display: flex;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 const maps = ref([]);
-let current_map = ref("")
+let current_maps = ref([])
 let history = ref([]);
 
 const coords = {
@@ -59,7 +59,7 @@ const colours = {
   "Peach Beach":"#d6fa19",
   "Peach Stadium":"#55cdfd",
   "Rainbow Road":"#d6fa19",
-  "Salty Salty Speedway":"#d6fa19",
+  "Salty Salty Speedway":"#ee1c25",
   "Shy Guy Bazaar":"#ee1c25",
   "Sky-High Sundae":"#d6fa19",
   "Starview Peak":"#55cdfd",
@@ -78,7 +78,7 @@ function writeHistory(){
   for(let i = 29; i>=0; i--){
     maps.value.forEach(element => {
       if(element["since_last_played"] == i){
-        history.value.push(element["map_name"])
+        history.value.push(element["map_name"]);
       }
     });
   }
@@ -97,17 +97,35 @@ async function getProbs(){
     console.error("Fetch failed:", err)
   }
 }
-
-async function generateMap(){
+async function generateSet() {
+  const num = document.getElementsByTagName("select")[0].value;
   try{
-    const response = await fetch('http://localhost:3000/api/generate_map')
+    const response = await fetch('http://localhost:3000/api/generate_set', {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ mapNum: num })
+    });
+    current_maps.value =  JSON.parse(await response.text())
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
-    current_map.value = await response.text();
-    current_map.value = current_map.value.substring(1, current_map.value.length-1)
-    history.value.push(current_map.value);
-    console.log(current_map.value);
+
+  } catch (err) {
+    console.error("Fetch failed:", err)
+  }
+}
+async function generateMap(){
+  try{
+    const response = await fetch('http://localhost:3000/api/generate_map');
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
+    const ob = await response.text();
+    current_maps.value = [ob.substring(1, ob.length-1)];
+    history.value.push(current_maps.value[0]);
+    console.log(current_maps.value[0]);
     getProbs();
     return response;
   } catch (err) {
@@ -128,7 +146,7 @@ async function resetHistory(){
     console.error("Fetch failed");
   }
   history.value = [];
-  current_map.value = "";
+  current_maps.value = [];
 }
 
 const selected_tab = ref("Map generator");
@@ -140,19 +158,26 @@ const selected_tab = ref("Map generator");
   <div class="container">
     <div class="bar">
       <div class="tab" @click="selected_tab = 'Map generator';"> Map generator </div>
-      <div class="tab" @click="selected_tab = 'Set generator';"> Set generator </div>
+      <!-- <div class="tab" @click="selected_tab = 'Set generator';"> Set generator </div> -->
       <div class="tab" @click="selected_tab = 'Probabilities';"> Probabilities </div>
       <div class="tab" @click="selected_tab = 'History';"> History </div>
     </div>
     <div>
       <div class="content" v-if="selected_tab=='Map generator'">
           <button @click="generateMap()">Generate map</button>
+          <button @click="generateSet()">Generate set</button>
+          <select name="number of maps" id="n_maps" def>
+            <option v-for="i in [3,4,5,6,8,10,12,16,20,30]">{{i}}</option>
+          </select>
           <!-- <div class="map_box"> -->
             <div class="map">
-              <div v-if="current_map.length >0" class="map_names">{{ current_map }}</div>
-              <svg v-if="current_map.length >0" height="480" width="480">
-                <circle r="8" :cx="coords[current_map][0]" :cy="coords[current_map][1]" fill="#00000000" :stroke="colours[current_map]" stroke-width="3"/>
-                <circle r="3" :cx="coords[current_map][0]" :cy="coords[current_map][1]" :fill="colours[current_map]"/>
+              <div v-if="current_maps.length == 1" class="map_names">{{ current_maps[0] }}</div>
+              <svg v-for="map in current_maps" height="480" width="480" style="position: absolute;">
+                <circle r="8" :cx="coords[map][0]" :cy="coords[map][1]" fill="#00000000" :stroke="colours[map]" stroke-width="3"/>
+                <circle r="3" :cx="coords[map][0]" :cy="coords[map][1]" :fill="colours[map]"/>
+              </svg>
+              <svg v-for="i in current_maps.length-1" :key="i" height="480" width="480" style="position: absolute;">
+                <line :x1="coords[current_maps[i-1]][0]" :y1="coords[current_maps[i-1]][1]" :x2="coords[current_maps[i]][0]" :y2="coords[current_maps[i]][1]" stroke="black" />
               </svg>
             </div>
         </div>

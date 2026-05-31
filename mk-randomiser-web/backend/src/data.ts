@@ -71,8 +71,7 @@ export function saveProbs(table: any){
         throw error;
     }
 
-  console.log("data.json written correctly");
-});
+    });
 }
 
 export async function readProbs(): Promise<any[]> {

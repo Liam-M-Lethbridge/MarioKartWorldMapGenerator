@@ -18,13 +18,10 @@ export function assignCumProbs(probs: any[]){
 }
 
 export function calcProbabilities(probs: any[], cooldown: number, probType:string){
-    console.log(cooldown)
     probs.forEach(element => {
         if (element["since_last_played"] < cooldown){
-            console.log(element["map_name"], " should be zero")
             element["prob"] = 0.0;
         }else if(element["since_last_played"] < cooldown*2){
-                console.log(element["map_name"], " should be nearly zero")
             // if linear rejoining
             if (probType == "linear"){
                 element["prob"] = (element["since_last_played"]-cooldown+1)/(cooldown+1);
@@ -44,7 +41,9 @@ export function calcProbabilities(probs: any[], cooldown: number, probType:strin
 }
 
 export async function choose(probs: any[]){
-    const max_prob = probs.slice(-1)[0]["cumulative_probs"];
+    
+    // console.log("hello", probs)
+    const max_prob = probs[probs.length-1]["cumulative_probs"];
     const n = Math.random()*max_prob;
 
     let index = 0;
@@ -54,8 +53,7 @@ export async function choose(probs: any[]){
         }
     });
     probs = await update_table(probs, index);
-    console.log(probs.slice(index, index+1))
-    return probs.slice(index, index+1)[0]["map_name"];
+    return probs[index]["map_name"];
 }
 
 async function update_table(probs: any[], index: number){

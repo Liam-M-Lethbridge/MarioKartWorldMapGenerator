@@ -12,7 +12,7 @@ const coords = {
   "Cheep Cheep Falls":[305,255],
   "Choco Mountain":[180,255],
   "Crown City":[175,340],
-  "Dandelion Depths":[275,185],
+  "Dandelion Depths":[295,185],
   "Desert Hills":[55,330],
   "Dino Dino Jungle":[315,410],
   "DK Pass":[355,220],
@@ -108,6 +108,10 @@ async function generateSet() {
       body: JSON.stringify({ mapNum: num })
     });
     current_maps.value =  JSON.parse(await response.text())
+    current_maps.value.forEach( (map) => {
+      history.value.push(map);
+    })
+    getProbs();
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
@@ -125,7 +129,6 @@ async function generateMap(){
     const ob = await response.text();
     current_maps.value = [ob.substring(1, ob.length-1)];
     history.value.push(current_maps.value[0]);
-    console.log(current_maps.value[0]);
     getProbs();
     return response;
   } catch (err) {

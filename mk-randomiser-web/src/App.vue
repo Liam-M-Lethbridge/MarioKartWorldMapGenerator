@@ -292,6 +292,20 @@ button{
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
+  background:
+        linear-gradient(
+            to bottom,
+            rgba(255,255,255,0) 0%,
+            rgba(0,0,0,0.7) 100%
+        ),
+        repeating-conic-gradient(
+            #a8f5e6 0% 25%,
+            #7ae8d1 25% 50%,
+            #a8f5e6 50% 75%,
+            #7ae8d1 75% 100%
+        );
+
+    background-size: 100% 100%, 10vh 10vh;
 }
 .tablecontent{
   display: flex;

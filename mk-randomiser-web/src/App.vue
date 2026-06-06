@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { coords, colours } from './data/mapData';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { animate, onScroll } from 'animejs';
 import {
   getMaps,
@@ -9,12 +9,70 @@ import {
   resetHistoryRequest
 } from './api/APICalls';
 import MKMap from './assets/map.vue';
+import questionBlock from './assets/questionBlock.vue';
+import emptyBlock from './assets/emptyBlock.vue';
 
 interface MapData {
   map_name: string;
   since_last_played: number;
 }
 
+// for choosing the number of maps to generate
+const mapOptions = [1, 3, 4, 5, 6, 8, 12, 16, 32];
+
+var mapIndex = 0;
+
+const mapCount = ref(1)
+let lastWheelTime = 0;
+
+function handleWheel(event: WheelEvent) {
+  event.preventDefault();
+
+  const now = Date.now();
+
+  if (now - lastWheelTime < 300) {
+    return;
+  }
+
+  lastWheelTime = now;
+
+  if (event.deltaY > 0) {
+    mapIndex = Math.min(8, mapIndex + 1);
+  } else {
+    mapIndex = Math.max(0, mapIndex - 1);
+  }
+  mapCount.value = mapOptions[mapIndex];
+  positionedRects.value = calculateRectPositions()
+}
+
+// for generating the number of rectangles
+const svgSize = ref(800);
+
+const center = computed(() => ({
+  x: svgSize.value / 2,
+  y: svgSize.value / 2,
+}));
+
+const radius = computed(() => svgSize.value * 0.4);
+
+function calculateRectPositions() {
+  const n = mapCount.value;
+
+  return Array.from({ length: n }, (_, i) => {
+    const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
+
+    return {
+      id: i,
+      x: center.value.x + radius.value * Math.cos(angle)*1.3,
+      y: center.value.y + radius.value * Math.sin(angle),
+      angle
+    };
+  });
+}
+
+const positionedRects = computed(() => calculateRectPositions());
+
+// for API calls
 const maps = ref<MapData[]>([]);
 const current_maps = ref<string[]>([]);
 const history = ref<string[]>([]);
@@ -41,12 +99,9 @@ async function generateMap() {
 }
 
 async function generateSet() {
-  const num = Number(
-    document.getElementsByTagName('select')[0].value
-  );
 
   try {
-    const generatedMaps = await generateSetRequest(num);
+    const generatedMaps = await generateSetRequest(mapCount.value);
 
     current_maps.value = generatedMaps;
 
@@ -90,35 +145,124 @@ function writeHistory(){
 </script>
 
 <template>
-  <div class="container">
-    <div>
-      <div class="content">
-            <MKMap @click="generateMap()"/>
-              
-            <svg v-for="map in current_maps" height="480" width="480" style="position: absolute;">
-                <circle r="8" :cx="coords[map][0]" :cy="coords[map][1]" fill="#00000000" :stroke="colours[map]" stroke-width="3"/>
-                <circle r="3" :cx="coords[map][0]" :cy="coords[map][1]" :fill="colours[map]"/>
-              </svg>
-              <svg v-for="i in current_maps.length-1" :key="i" height="480" width="480" style="position: absolute;">
-                <line :x1="coords[current_maps[i-1]][0]" :y1="coords[current_maps[i-1]][1]" :x2="coords[current_maps[i]][0]" :y2="coords[current_maps[i]][1]" stroke="black" />
-              </svg>
-        </div>
-        <div class="square"></div>
-    </div>
+  <div class="content">
+    <MKMap @click="generateSet()"  @wheel="handleWheel" class="map"/>
+      
+    <svg class="map-overlay" viewBox="0 0 480 480">
+      <line
+        v-for="i in current_maps.length - 1"
+        :key="`line-${i}`"
+        :x1="coords[current_maps[i - 1]][0]"
+        :y1="coords[current_maps[i - 1]][1]"
+        :x2="coords[current_maps[i]][0]"
+        :y2="coords[current_maps[i]][1]"
+        stroke="black"
+      />
+
+      <g v-for="map in current_maps" :key="map">
+        <circle
+          r="8"
+          :cx="coords[map][0]"
+          :cy="coords[map][1]"
+          fill="transparent"
+          :stroke="colours[map]"
+          stroke-width="3"
+        />
+        <circle
+          r="3"
+          :cx="coords[map][0]"
+          :cy="coords[map][1]"
+          :fill="colours[map]"
+        />
+      </g>
+    </svg>
+    <svg
+  class="overlay" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet">
+  <g v-for="rect in positionedRects" :key="rect.id" class="rect">
+    <!-- <rect
+      :x="rect.x - 75"
+      :y="rect.y - 20"
+      width="150"
+      height="40"
+      rx="4"
+      fill="white"
+      stroke="black"
+    /> -->
+    <questionBlock class="block"
+      v-if="rect.id >= current_maps.length" 
+      :x="rect.x - 75"
+      :y="rect.y - 20"/>
+    <emptyBlock class="block"
+      v-if="rect.id < current_maps.length" 
+      :x="rect.x - 75"
+      :y="rect.y - 20"/>
+
+    <text class="map-name" v-if="rect.id < current_maps.length"
+      :x="rect.x"
+      :y="rect.y"
+      text-anchor="middle"
+      dominant-baseline="middle"
+      font-size="16"
+    >
+      {{ current_maps[rect.id] }}
+    </text>
+  </g>
+</svg>
   </div>
+  
 </template>
 
 <style scoped>
 
-.container{
-    min-height: 100vh;
-    height: fit-content;
-    width: 100vw;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+@font-face {
+  font-family: ITBrush-Flare;
+  src: url('./assets/ITBrushflareDEMO-Italic.otf');
 }
+
+.block{
+  border-radius: 8px;
+  border: #4d4d4d solid 3px;
+}
+.rect{
+  background-color: black;
+  height: 20px;
+  width: 40px;
+}
+.map-name{
+  font-family: ITBrush-Flare;
+  fill: #f0c711;
+}
+.map-overlay {
+  position: absolute;
+  pointer-events: none;
+  width: min(70vw, 70vh);
+  height: min(70vw, 70vh);
+}
+.overlay {
+  position: absolute;
+  pointer-events: none;
+  /* inset: 0; */
+  width: min(100vw, 130vh);
+  height: min(100vw, 100vh);
+}
+.map{
+  width: min(70vw, 70vh);
+  height: min(70vw, 70vh);
+}
+.map-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+
+  background: white;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
 .content{
   display: flex;
   width: 100vw;
@@ -142,30 +286,9 @@ function writeHistory(){
         );
 
     background-size: 100% 100%, 10vh 10vh;
+  position: relative;
 }
-.tablecontent{
-  display: flex;
-  width: 100vw;
-  min-height: 100vh;
-  height: fit-content;
-  background-color: #ffffff;
-  padding: 0 auto 0rem;
-  padding-left: 0 auto 0rem;
-  flex-direction: row;
-  justify-content: center;
 
-}
-header {
-  line-height: 1.5;
-}
-.cell{
-  text-align: center;
-  border-bottom: 1px solid #f0f0d0;
-}
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
 
 @media (min-width: 1024px) {
   header {
@@ -184,4 +307,6 @@ header {
     flex-wrap: wrap;
   }
 }
+
+
 </style>

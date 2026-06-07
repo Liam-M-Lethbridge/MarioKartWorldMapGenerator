@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { coords, colours } from './data/mapData';
-import { ref, onMounted, computed } from 'vue';
-import { animate, onScroll } from 'animejs';
+import { ref, onMounted, computed, nextTick } from 'vue';
+import { animate, onScroll, stagger } from 'animejs';
 import {
   getMaps,
-  generateMapRequest,
   generateSetRequest,
   resetHistoryRequest
 } from './api/APICalls';
@@ -16,6 +15,14 @@ interface MapData {
   map_name: string;
   since_last_played: number;
 }
+
+// for selecting the rectangle elements
+const rectEls = ref<SVGGElement[]>([])
+
+function setRectRef(el: SVGGElement | null, id: number) {
+  if (el) rectEls.value[id] = el
+}
+
 
 // for choosing the number of maps to generate
 const mapOptions = [1, 3, 4, 5, 6, 8, 12, 16, 32];
@@ -37,12 +44,17 @@ function handleWheel(event: WheelEvent) {
   lastWheelTime = now;
 
   if (event.deltaY > 0) {
-    mapIndex = Math.min(8, mapIndex + 1);
+    mapIndex = Math.min(7, mapIndex + 1);
   } else {
     mapIndex = Math.max(0, mapIndex - 1);
   }
   mapCount.value = mapOptions[mapIndex];
   positionedRects.value = calculateRectPositions()
+  animate(".rect", {
+  width: [{ to: '+=10px', ease: 'outExpo', duration: 100 },
+    { to: '-=10px', ease: 'outExpo', duration: 100 }
+  ],
+})
 }
 
 // for generating the number of rectangles
@@ -65,12 +77,13 @@ function calculateRectPositions() {
       id: i,
       x: center.value.x + radius.value * Math.cos(angle)*1.3,
       y: center.value.y + radius.value * Math.sin(angle),
+      mapName: '',
       angle
     };
   });
 }
 
-const positionedRects = computed(() => calculateRectPositions());
+const positionedRects = ref([]);
 
 // for API calls
 const maps = ref<MapData[]>([]);
@@ -85,21 +98,16 @@ async function getProbs() {
   }
 }
 
-async function generateMap() {
-  try {
-    const map = await generateMapRequest();
 
-    current_maps.value = [map];
-    history.value.push(map);
-
-    await getProbs();
-  } catch (err) {
-    console.error(err);
-  }
-}
-
+let lastClickTime = 0;
 async function generateSet() {
+  const now = Date.now();
 
+  if (now - lastClickTime < 600) {
+    return;
+  }
+
+  lastClickTime = now;
   try {
     const generatedMaps = await generateSetRequest(mapCount.value);
 
@@ -111,6 +119,13 @@ async function generateSet() {
   } catch (err) {
     console.error(err);
   }
+  animate(".rect", {
+    y: [
+      {to:"-=10px", ease: "outExpo", duration: 100},
+      {to:"+=10px", ease: "outExpo", duration: 100}
+    ],
+    delay:stagger(150)
+  })
 }
 
 async function resetHistory() {
@@ -128,6 +143,7 @@ async function resetHistory() {
 
 onMounted(async () => {
   await getProbs();
+  positionedRects.value = calculateRectPositions()
   writeHistory();
 })
 
@@ -178,17 +194,9 @@ function writeHistory(){
     </svg>
     <svg
   class="overlay" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet">
-  <g v-for="rect in positionedRects" :key="rect.id" class="rect">
-    <!-- <rect
-      :x="rect.x - 75"
-      :y="rect.y - 20"
-      width="150"
-      height="40"
-      rx="4"
-      fill="white"
-      stroke="black"
-    /> -->
-    <questionBlock class="block"
+  <g
+  v-for="rect in positionedRects" :key="rect.id" class="rect" :ref="el => setRectRef(el, rect.id)">
+<questionBlock class="block"
       v-if="rect.id >= current_maps.length" 
       :x="rect.x - 75"
       :y="rect.y - 20"/>

@@ -131,7 +131,7 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"><rect
-       style="font-variation-settings:'opsz' 19.44, 'wght' 534;fill:#444444;fill-opacity:1;stroke:#ffffff;stroke-width:0;stroke-dasharray:none"
+       style="font-variation-settings:'opsz' 19.44, 'wght' 534;fill:#772913;fill-opacity:1;stroke:#ffffff;stroke-width:0;stroke-dasharray:none"
        id="rect1"
        width="39.6875"
        height="10.583333"

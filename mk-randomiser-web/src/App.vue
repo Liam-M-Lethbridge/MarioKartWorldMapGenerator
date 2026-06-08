@@ -7,14 +7,37 @@ import {
   generateSetRequest,
   resetHistoryRequest
 } from './api/APICalls';
-import MKMap from './assets/map.vue';
-import questionBlock from './assets/questionBlock.vue';
-import emptyBlock from './assets/emptyBlock.vue';
+import MKMap from './components/map.vue';
+import questionBlock from './components/questionBlock.vue';
+import emptyBlock from './components/emptyBlock.vue';
+import cog from './components/cog.vue';
+import { animateCog } from './components/cog.vue';
+import blurScreen from './components/blurScreen.vue';
+import { animateBlur } from './components/blurScreen.vue';
 
 interface MapData {
   map_name: string;
   since_last_played: number;
 }
+
+var settingsMenu = ref(false);
+const settingsMenuLength = 500;
+
+function toggleSettingsMenu(){
+  const menu = document.querySelector('.settings-menu');
+  const width = menu.offsetWidth;
+
+  animate(menu, {
+    x: [{
+      to: settingsMenu.value ? 0 : -width,
+      ease: 'outExpo',
+      duration: 400
+    }]
+  });
+
+  settingsMenu.value = !settingsMenu.value;
+}
+
 
 // for selecting the rectangle elements
 const rectEls = ref<SVGGElement[]>([])
@@ -77,7 +100,6 @@ function calculateRectPositions() {
       id: i,
       x: center.value.x + radius.value * Math.cos(angle)*1.3,
       y: center.value.y + radius.value * Math.sin(angle),
-      mapName: '',
       angle
     };
   });
@@ -87,7 +109,7 @@ const positionedRects = ref([]);
 
 // for API calls
 const maps = ref<MapData[]>([]);
-const current_maps = ref<string[]>([]);
+const currentMaps = ref<string[]>([]);
 const history = ref<string[]>([]);
 
 async function getProbs() {
@@ -111,7 +133,7 @@ async function generateSet() {
   try {
     const generatedMaps = await generateSetRequest(mapCount.value);
 
-    current_maps.value = generatedMaps;
+    currentMaps.value = generatedMaps;
 
     history.value.push(...generatedMaps);
 
@@ -133,7 +155,7 @@ async function resetHistory() {
     await resetHistoryRequest();
 
     history.value = [];
-    current_maps.value = [];
+    currentMaps.value = [];
 
     await getProbs();
   } catch (err) {
@@ -162,20 +184,21 @@ function writeHistory(){
 
 <template>
   <div class="content">
+    <blurScreen/>
     <MKMap @click="generateSet()"  @wheel="handleWheel" class="map"/>
       
     <svg class="map-overlay" viewBox="0 0 480 480">
       <line
-        v-for="i in current_maps.length - 1"
+        v-for="i in currentMaps.length - 1"
         :key="`line-${i}`"
-        :x1="coords[current_maps[i - 1]][0]"
-        :y1="coords[current_maps[i - 1]][1]"
-        :x2="coords[current_maps[i]][0]"
-        :y2="coords[current_maps[i]][1]"
+        :x1="coords[currentMaps[i - 1]][0]"
+        :y1="coords[currentMaps[i - 1]][1]"
+        :x2="coords[currentMaps[i]][0]"
+        :y2="coords[currentMaps[i]][1]"
         stroke="black"
       />
 
-      <g v-for="map in current_maps" :key="map">
+      <g v-for="map in currentMaps" :key="map">
         <circle
           r="8"
           :cx="coords[map][0]"
@@ -192,30 +215,35 @@ function writeHistory(){
         />
       </g>
     </svg>
-    <svg
-  class="overlay" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet">
-  <g
-  v-for="rect in positionedRects" :key="rect.id" class="rect" :ref="el => setRectRef(el, rect.id)">
-<questionBlock class="block"
-      v-if="rect.id >= current_maps.length" 
-      :x="rect.x - 75"
-      :y="rect.y - 20"/>
-    <emptyBlock class="block"
-      v-if="rect.id < current_maps.length" 
-      :x="rect.x - 75"
-      :y="rect.y - 20"/>
+    <svg class="overlay" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet">
+      <g v-for="rect in positionedRects" :key="rect.id" class="rect" :ref="el => setRectRef(el, rect.id)">
+        <questionBlock class="block"
+          v-if="rect.id >= currentMaps.length" 
+          :x="rect.x - 75"
+          :y="rect.y - 20"/>
+        <emptyBlock class="block"
+          v-if="rect.id < currentMaps.length" 
+          :x="rect.x - 75"
+          :y="rect.y - 20"/>
 
-    <text class="map-name" v-if="rect.id < current_maps.length"
-      :x="rect.x"
-      :y="rect.y"
-      text-anchor="middle"
-      dominant-baseline="middle"
-      font-size="16"
-    >
-      {{ current_maps[rect.id] }}
-    </text>
-  </g>
-</svg>
+        <text class="map-name" v-if="rect.id < currentMaps.length"
+          :x="rect.x"
+          :y="rect.y"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          font-size="16"
+        >
+          {{ currentMaps[rect.id] }}
+        </text>
+      </g>
+    </svg>
+    <blurScreen/>
+    <div class="settings-menu" >
+      <g  class="settings-block">
+      <emptyBlock/> 
+      </g>
+    </div>
+    <cog @click="toggleSettingsMenu(); animateCog(settingsMenu); animateBlur(settingsMenu)"/>
   </div>
   
 </template>
@@ -226,10 +254,18 @@ function writeHistory(){
   font-family: ITBrush-Flare;
   src: url('./assets/ITBrushflareDEMO-Italic.otf');
 }
-
-.block{
-  border-radius: 8px;
-  border: #4d4d4d solid 3px;
+.settings-menu{
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width:fit-content;
+  background-color: #4d4d4d;
+  left: 100vw;
+  height: 100vh;
+}
+.settings-block{
+  padding: 20px;
 }
 .rect{
   background-color: black;
@@ -293,7 +329,7 @@ function writeHistory(){
             #4d4d4d 75% 100%
         );
 
-    background-size: 100% 100%, 10vh 10vh;
+    background-size: 100% 100%, 20vh 20vh;
   position: relative;
 }
 

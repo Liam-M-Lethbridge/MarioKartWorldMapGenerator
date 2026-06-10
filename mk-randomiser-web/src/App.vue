@@ -22,13 +22,37 @@ interface MapData {
   since_last_played: number;
 }
 
-var settingsMenu = ref(false);
-const settingsMenuLength = 500;
+var settingsMenu = ref(false); // boolean keeps track of if the settings menu is open or closed
 
+const rectEls = ref<SVGGElement[]>([]) // array of the rectangles
+
+const mapOptions = [1, 3, 4, 5, 6, 8, 12, 16, 32]; // for choosing the number of maps to generate
+var mapIndex = 0; // for indexing mapOptions
+const mapCount = ref(1) // the numper of maps to generate
+let lastWheelTime = 0;
+
+const svgSize = ref(800); // size of the map names svg
+const center = computed(() => ({
+  x: svgSize.value / 2,
+  y: svgSize.value / 2,
+})); // center of the map names svg
+const radius = computed(() => svgSize.value * 0.4); // radius of the map names SVG
+
+const positionedRects = ref([]); // the positions of the .rect elements
+
+const maps = ref<MapData[]>([]); // the object containing all of the maps
+const currentMaps = ref<string[]>([]); // the object containing the names of the maps generated
+const history = ref<string[]>([]); // the object containing the names of the last 30 maps generated
+
+const cooldown = ref(6); 
+const editingCooldown = ref(false)
+
+let lastClickTime = 0; // last time the map was clicked
+
+// function toggles the settings menu. When menu is closed, the cooldown counter is updated according to the user's choice
 function toggleSettingsMenu(){
   const menu = document.querySelector('.settings-menu');
   const width = menu.offsetWidth;
-
   animate(menu, {
     x: [{
       to: settingsMenu.value ? 0 : -width,
@@ -37,30 +61,20 @@ function toggleSettingsMenu(){
     }]
   });
 
-  if (settingsMenu.value){
+  // if the settings menu is being closed and the cooldown value has been edited we update it
+  if (settingsMenu.value && editingCooldown.value){
     writeCooldown()
     editingCooldown.value=false
   }
   settingsMenu.value = !settingsMenu.value;
 }
 
-
-// for selecting the rectangle elements
-const rectEls = ref<SVGGElement[]>([])
-
+// Function used to set the .rect elements
 function setRectRef(el: SVGGElement | null, id: number) {
   if (el) rectEls.value[id] = el
 }
 
-
-// for choosing the number of maps to generate
-const mapOptions = [1, 3, 4, 5, 6, 8, 12, 16, 32];
-
-var mapIndex = 0;
-
-const mapCount = ref(1)
-let lastWheelTime = 0;
-
+// Function used to increment or decrement the number of maps using scroll element.
 function handleWheel(event: WheelEvent) {
   event.preventDefault();
 
@@ -86,16 +100,7 @@ function handleWheel(event: WheelEvent) {
 })
 }
 
-// for generating the number of rectangles
-const svgSize = ref(800);
-
-const center = computed(() => ({
-  x: svgSize.value / 2,
-  y: svgSize.value / 2,
-}));
-
-const radius = computed(() => svgSize.value * 0.4);
-
+// Function calculates the positions of the .rect elements in the map name SVG
 function calculateRectPositions() {
   const n = mapCount.value;
 
@@ -111,13 +116,7 @@ function calculateRectPositions() {
   });
 }
 
-const positionedRects = ref([]);
-
-// for API calls
-const maps = ref<MapData[]>([]);
-const currentMaps = ref<string[]>([]);
-const history = ref<string[]>([]);
-
+// Function replaces the value in maps with the current map probability data
 async function getProbs() {
   try {
     maps.value = await getMaps();
@@ -126,17 +125,17 @@ async function getProbs() {
   }
 }
 
-const cooldown = ref(6); 
-const editingCooldown = ref(false)
-
+// Function edits the cooldown value
 function editCooldown(value: number){
   cooldown.value = Math.min(Math.max(cooldown.value + value, 0), 30)
 }
 
+// Function sends the edited cooldown value to the server and receives the update map information
 async function writeCooldown(){
   maps.value = await writeCooldownRequest(cooldown.value)
 }
 
+// Function requests the cooldown value from the server
 async function getCooldown() {
   try {
     cooldown.value = await getCooldownRequest();
@@ -144,7 +143,8 @@ async function getCooldown() {
     console.error(err);
   }
 }
-let lastClickTime = 0;
+
+// Function generates a new set of maps
 async function generateSet() {
   const now = Date.now();
 
@@ -173,6 +173,7 @@ async function generateSet() {
   })
 }
 
+// Function resets the history to empty
 async function resetHistory() {
   try {
     await resetHistoryRequest();
@@ -186,13 +187,7 @@ async function resetHistory() {
   }
 }
 
-onMounted(async () => {
-  await getProbs();
-  await getCooldown();
-  positionedRects.value = calculateRectPositions()
-  writeHistory();
-})
-
+// function writes the history using the current maps
 function writeHistory(){
   for(let i = 29; i>=0; i--){
     maps.value.forEach(element => {
@@ -202,6 +197,14 @@ function writeHistory(){
     });
   }
 }
+
+
+onMounted(async () => {
+  await getProbs();
+  await getCooldown();
+  positionedRects.value = calculateRectPositions()
+  writeHistory();
+})
 
 
 </script>
@@ -321,6 +324,7 @@ function writeHistory(){
   font-family: ITBrush-Flare;
   src: url('./assets/ITBrushflareDEMO-Italic.otf');
 }
+
 .settings-menu{
   position: absolute;
   display: flex;
@@ -331,24 +335,29 @@ function writeHistory(){
   left: 100vw;
   height: 100vh;
 }
+
 .settings-block{
   padding: 20px;
 }
+
 .rect{
   background-color: black;
   height: 20px;
   width: 40px;
 }
+
 .map-name{
   font-family: ITBrush-Flare;
   fill: #f0c711;
 }
+
 .map-overlay {
   position: absolute;
   pointer-events: none;
   height: 98%;
   aspect-ratio: 1;
 }
+
 .overlay {
   position: absolute;
   pointer-events: none;
@@ -359,26 +368,26 @@ function writeHistory(){
 
 .map{
   height: 100%;
-  /* height: min(70, 70%); */
   aspect-ratio: 1;
 }
+
 .map-count {
   position: absolute;
   top: 10px;
   right: 10px;
   z-index: 10;
-
   padding: 0.5rem 1rem;
   border-radius: 8px;
-
   background: white;
   font-size: 2rem;
   font-weight: bold;
 }
+
 .settings-text{
   font-family: ITBrush-Flare;
   fill: #f0c711;
 }
+
 .settings-text:hover{
   fill:#fad948
 }
@@ -388,16 +397,14 @@ function writeHistory(){
   position: relative;
   max-width: min(50vw, 70vh);
   aspect-ratio: 1;
-  
-
   flex-direction: column;
   justify-content: center;
   align-items: center;
 }
+
 .background{
   display: flex;   
   position: relative;
-
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -416,7 +423,6 @@ function writeHistory(){
             #7f7f7f 50% 75%,
             #4d4d4d 75% 100%
         );
-
     background-size: 100% 100%, 20vh 20vh;
 }
 
@@ -438,6 +444,5 @@ function writeHistory(){
     flex-wrap: wrap;
   }
 }
-
 
 </style>

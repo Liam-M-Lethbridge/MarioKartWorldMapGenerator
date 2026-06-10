@@ -7,6 +7,8 @@ import { request } from 'node:http';
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+
 app.get('/api/maps', async (req: Request, res) => {
   const probs = await startupProcedure();
   res.json(probs);

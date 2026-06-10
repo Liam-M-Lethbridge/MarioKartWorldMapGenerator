@@ -1,6 +1,7 @@
 <script lang="ts">
 import { animate } from 'animejs';
 
+// Function controls the animation for the blur overlay
 export function animateBlur(value:boolean) {
     const element = document.getElementById("blur-overlay");
     if(value){
@@ -13,7 +14,6 @@ export function animateBlur(value:boolean) {
             opacity:{to:"0", duration:300}
         })
         element.style.pointerEvents = "none";
-
     }
 }
 </script>

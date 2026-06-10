@@ -1,7 +1,7 @@
 <script>
 import { animate } from 'animejs';
 
-
+// Function animates the cog SVG
 export function animateCog(value){
    if(value){
       animate('.cog', {

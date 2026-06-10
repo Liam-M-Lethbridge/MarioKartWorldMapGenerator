@@ -1,12 +1,3 @@
-<script setup>
-defineProps({
-  label: {
-    type: String,
-    default: ''
-  }
-})
-</script>
-
 <template>
 <svg
    width="150"

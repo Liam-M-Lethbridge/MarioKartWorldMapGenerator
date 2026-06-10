@@ -1,4 +1,6 @@
 import { readVars } from "./data.ts";
+
+// Function assigns initial probabilities to each map and sets the since_last_played attribute to default 30.
 export function assignProbabilities(probs: any[]) {
     probs.forEach((element) => {
         element.prob = 1.0;
@@ -8,6 +10,7 @@ export function assignProbabilities(probs: any[]) {
     return probs;
 }
 
+// Function calculates the cumulative prob value for each map
 export function assignCumProbs(probs: any[]){
     let cum = 0.0;
     probs.forEach(element => {
@@ -17,6 +20,7 @@ export function assignCumProbs(probs: any[]){
     return probs;
 }
 
+// Function calulates the relative probabilities for each map using the vars data
 export function calcProbabilities(probs: any[], cooldown: number, probType:string){
     probs.forEach(element => {
         if (element["since_last_played"] < cooldown){
@@ -40,6 +44,7 @@ export function calcProbabilities(probs: any[], cooldown: number, probType:strin
     probs = assignCumProbs(probs);
 }
 
+// Function randomly chooses a map and updates the table accordingly
 export async function choose(probs: any[]){
     
     // console.log("hello", probs)
@@ -56,6 +61,7 @@ export async function choose(probs: any[]){
     return probs[index]["map_name"];
 }
 
+// Function updates the probs table after a map is chosen
 async function update_table(probs: any[], index: number){
     probs.forEach(element => {
         if (element["since_last_played"] < 30){

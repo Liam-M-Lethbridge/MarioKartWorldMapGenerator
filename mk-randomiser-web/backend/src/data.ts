@@ -2,6 +2,7 @@ import fs from 'fs';
 import csv from 'csv-parser';
 import { assignCumProbs, assignProbabilities } from './probabilities.ts';
 
+// Function reads and returns the map names from maps.csv
 export function getData(): Promise<any[]> {
     return new Promise((resolve, reject) => {
 
@@ -21,6 +22,7 @@ export function getData(): Promise<any[]> {
     });
 }
 
+// Function reads and returns the variables data from vars.json
 export function readVars(): Promise<any[]>{
     return new Promise((resolve, reject) => {
         fs.readFile("./data/vars.json", "utf-8", (error, data) => {
@@ -45,7 +47,7 @@ export function readVars(): Promise<any[]>{
     });
 }
 
-
+// Function saves the vars data passed to it to vars.json
 export function saveVars(cooldown:number, probType: string){
     const data = JSON.stringify({
         'cooldown':cooldown,
@@ -61,6 +63,7 @@ export function saveVars(cooldown:number, probType: string){
     });
 }
 
+// Function saves the map probability data passed to it to probs.json
 export function saveProbs(table: any){
     const jsonTable = JSON.stringify(table);
     fs.writeFile("./data/probs.json", jsonTable, (error) => {
@@ -74,6 +77,7 @@ export function saveProbs(table: any){
     });
 }
 
+// Function reads the probability data from probs.json
 export async function readProbs(): Promise<any[]> {
     return new Promise((resolve, reject) => {
         fs.readFile("./data/probs.json", "utf-8", (error, data) => {
@@ -99,6 +103,7 @@ export async function readProbs(): Promise<any[]> {
     });
 }
 
+// Function called when client is mounted. Reads probability data if it exists. Otherwise it makes it. Same for vars data.
 export async function startupProcedure(){
     var probs: any[] = [];
     if(fs.existsSync("./data/probs.json")){

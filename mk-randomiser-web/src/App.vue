@@ -206,106 +206,110 @@ function writeHistory(){
 </script>
 
 <template>
-  <div class="content">
-    <blurScreen/>
-    <MKMap @click="generateSet()"  @wheel="handleWheel" class="map"/>
+  <div class="background">
+    <div class="content">
+      <blurScreen/>
+      <MKMap @click="generateSet()"  @wheel="handleWheel" class="map"/>
+        
+      <svg class="map-overlay" viewBox="0 0 480 480">
+        <line
+          v-for="i in Math.max(currentMaps.length - 1, 0)"
+          :key="`line-${i}`"
+          :x1="coords[currentMaps[i - 1]][0]"
+          :y1="coords[currentMaps[i - 1]][1]"
+          :x2="coords[currentMaps[i]][0]"
+          :y2="coords[currentMaps[i]][1]"
+          stroke="black"
+        />
+
+        <g v-for="map in currentMaps" :key="map">
+          <circle
+            r="8"
+            :cx="coords[map][0]"
+            :cy="coords[map][1]"
+            fill="transparent"
+            :stroke="colours[map]"
+            stroke-width="3"
+          />
+          <circle
+            r="3"
+            :cx="coords[map][0]"
+            :cy="coords[map][1]"
+            :fill="colours[map]"
+          />
+        </g>
+      </svg>
+      <svg class="overlay" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet">
+        <g v-for="rect in positionedRects" :key="rect.id" class="rect" :ref="el => setRectRef(el, rect.id)">
+          <questionBlock class="block"
+            v-if="rect.id >= currentMaps.length" 
+            :x="rect.x - 75"
+            :y="rect.y - 20"/>
+          <emptyBlock class="block"
+            v-if="rect.id < currentMaps.length" 
+            :x="rect.x - 75"
+            :y="rect.y - 20"/>
+
+          <text class="map-name" v-if="rect.id < currentMaps.length"
+            :x="rect.x"
+            :y="rect.y"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="16"
+          >
+            {{ currentMaps[rect.id] }}
+          </text>
+        </g>
+      </svg>
       
-    <svg class="map-overlay" viewBox="0 0 480 480">
-      <line
-        v-for="i in Math.max(currentMaps.length - 1, 0)"
-        :key="`line-${i}`"
-        :x1="coords[currentMaps[i - 1]][0]"
-        :y1="coords[currentMaps[i - 1]][1]"
-        :x2="coords[currentMaps[i]][0]"
-        :y2="coords[currentMaps[i]][1]"
-        stroke="black"
-      />
-
-      <g v-for="map in currentMaps" :key="map">
-        <circle
-          r="8"
-          :cx="coords[map][0]"
-          :cy="coords[map][1]"
-          fill="transparent"
-          :stroke="colours[map]"
-          stroke-width="3"
-        />
-        <circle
-          r="3"
-          :cx="coords[map][0]"
-          :cy="coords[map][1]"
-          :fill="colours[map]"
-        />
-      </g>
-    </svg>
-    <svg class="overlay" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet">
-      <g v-for="rect in positionedRects" :key="rect.id" class="rect" :ref="el => setRectRef(el, rect.id)">
-        <questionBlock class="block"
-          v-if="rect.id >= currentMaps.length" 
-          :x="rect.x - 75"
-          :y="rect.y - 20"/>
-        <emptyBlock class="block"
-          v-if="rect.id < currentMaps.length" 
-          :x="rect.x - 75"
-          :y="rect.y - 20"/>
-
-        <text class="map-name" v-if="rect.id < currentMaps.length"
-          :x="rect.x"
-          :y="rect.y"
-          text-anchor="middle"
-          dominant-baseline="middle"
-          font-size="16"
-        >
-          {{ currentMaps[rect.id] }}
-        </text>
-      </g>
-    </svg>
-    <blurScreen/>
-    <div v-if="settingsMenu" @click="toggleSettingsMenu(); animateCog(settingsMenu); animateBlur(settingsMenu)" style="width: 100vw; height: 100vh; position: absolute;"></div>
-    <div class="settings-menu">
-      <g class="settings-block">
-          <emptyBlock class="settings-text" @click="resetHistory();">          
-            <text 
-                text-anchor="middle"
-                dominant-baseline="middle"
-                font-size="4"
-                x="19.84375"
-                y="5.291666">
-              Clear history
-          </text></emptyBlock>
-
-      </g>
-      <g class="settings-block">
-        <emptyBlock class="settings-text">          
-          <text v-if="editingCooldown==false" @click="editingCooldown=true"
-              text-anchor="middle"
-              dominant-baseline="middle"
-              font-size="4"
-              x="19.84375"
-              y="5.291666">
-              Edit cooldown 
-          </text>
-
-            <polygon points="3,5 8,8 8,2" v-if="editingCooldown==true" @click="editCooldown(-1)"></polygon>
-            <polygon points="37,5 32,8 32,2" v-if="editingCooldown==true" @click="editCooldown(1)"></polygon>
-
-          <text v-if="editingCooldown==true"
-                text-anchor="middle"
-                dominant-baseline="middle"
-                font-size="4"
-                x="19.84375"
-                y="5.291666">
-               {{cooldown}} 
-          </text>
-          
-        </emptyBlock>
-
-      </g>
-     
     </div>
-    <cog @click="toggleSettingsMenu(); animateCog(settingsMenu); animateBlur(settingsMenu)"/>
+    <blurScreen/>
+
+    <div v-if="settingsMenu" @click="toggleSettingsMenu(); animateCog(settingsMenu); animateBlur(settingsMenu)" style="width: 100vw; height: 100vh; position: absolute;"></div>
+      <div class="settings-menu">
+        <g class="settings-block">
+            <emptyBlock class="settings-text" @click="resetHistory();">          
+              <text 
+                  text-anchor="middle"
+                  dominant-baseline="middle"
+                  font-size="4"
+                  x="19.84375"
+                  y="5.291666">
+                Clear history
+            </text></emptyBlock>
+
+        </g>
+        <g class="settings-block">
+          <emptyBlock class="settings-text">          
+            <text v-if="editingCooldown==false" @click="editingCooldown=true"
+                text-anchor="middle"
+                dominant-baseline="middle"
+                font-size="4"
+                x="19.84375"
+                y="5.291666">
+                Edit cooldown 
+            </text>
+
+              <polygon points="3,5 8,8 8,2" v-if="editingCooldown==true" @click="editCooldown(-1)"></polygon>
+              <polygon points="37,5 32,8 32,2" v-if="editingCooldown==true" @click="editCooldown(1)"></polygon>
+
+            <text v-if="editingCooldown==true"
+                  text-anchor="middle"
+                  dominant-baseline="middle"
+                  font-size="4"
+                  x="19.84375"
+                  y="5.291666">
+                {{cooldown}} 
+            </text>
+            
+          </emptyBlock>
+
+        </g>
+
+      </div>
+        <cog @click="toggleSettingsMenu(); animateCog(settingsMenu); animateBlur(settingsMenu)"/>
+
   </div>
-  
 </template>
 
 <style scoped>
@@ -339,19 +343,21 @@ function writeHistory(){
 .map-overlay {
   position: absolute;
   pointer-events: none;
-  width: min(70vw, 70vh);
-  height: min(70vw, 70vh);
+  height: 98%;
+  aspect-ratio: 1;
 }
 .overlay {
   position: absolute;
   pointer-events: none;
   /* inset: 0; */
-  width: min(100vw, 130vh);
-  height: min(100vw, 100vh);
-}
+  aspect-ratio: 1.3;
+  height: 140%;
+  }
+
 .map{
-  width: min(70vw, 70vh);
-  height: min(70vw, 70vh);
+  height: 100%;
+  /* height: min(70, 70%); */
+  aspect-ratio: 1;
 }
 .map-count {
   position: absolute;
@@ -374,16 +380,27 @@ function writeHistory(){
   fill:#fad948
 }
 
-
 .content{
-  display: flex;
-  width: 100vw;
-  min-height: 100vh;
-  height: fit-content;
-  background-color: #ffffff;
+  display: flex;   
+  position: relative;
+  max-width: min(50vw, 70vh);
+  aspect-ratio: 1;
+  
+
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+.background{
+  display: flex;   
+  position: relative;
+
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffffff;
+  width: 100vw;
+  height: 100vh;
   background:
         linear-gradient(
             to bottom,
@@ -398,7 +415,6 @@ function writeHistory(){
         );
 
     background-size: 100% 100%, 20vh 20vh;
-  position: relative;
 }
 
 

@@ -1,3 +1,12 @@
+<script setup>
+defineProps({
+  label: {
+    type: String,
+    default: ''
+  }
+})
+</script>
+
 <template>
 <svg
    width="150"
@@ -156,5 +165,7 @@
        id="path3-15-6-8"
        cx="1.7462499"
        cy="8.8370829"
-       r="0.55562496" /></g></svg>
+       r="0.55562496" />
+       <slot/>
+       </g></svg>
 </template>

@@ -5,7 +5,9 @@ import { animate, onScroll, stagger } from 'animejs';
 import {
   getMaps,
   generateSetRequest,
-  resetHistoryRequest
+  resetHistoryRequest,
+  getCooldownRequest,
+  writeCooldownRequest
 } from './api/APICalls';
 import MKMap from './components/map.vue';
 import questionBlock from './components/questionBlock.vue';
@@ -35,6 +37,9 @@ function toggleSettingsMenu(){
     }]
   });
 
+  if (settingsMenu.value){
+    writeCooldown()
+  }
   settingsMenu.value = !settingsMenu.value;
 }
 
@@ -120,7 +125,24 @@ async function getProbs() {
   }
 }
 
+const cooldown = ref(6); 
+const editingCooldown = ref(false)
 
+function editCooldown(value: number){
+  cooldown.value = Math.min(Math.max(cooldown.value + value, 0), 30)
+}
+
+async function writeCooldown(){
+  maps.value = await writeCooldownRequest(cooldown.value)
+}
+
+async function getCooldown() {
+  try {
+    cooldown.value = await getCooldownRequest();
+  } catch (err) {
+    console.error(err);
+  }
+}
 let lastClickTime = 0;
 async function generateSet() {
   const now = Date.now();
@@ -165,6 +187,7 @@ async function resetHistory() {
 
 onMounted(async () => {
   await getProbs();
+  await getCooldown();
   positionedRects.value = calculateRectPositions()
   writeHistory();
 })
@@ -189,7 +212,7 @@ function writeHistory(){
       
     <svg class="map-overlay" viewBox="0 0 480 480">
       <line
-        v-for="i in currentMaps.length - 1"
+        v-for="i in Math.max(currentMaps.length - 1, 0)"
         :key="`line-${i}`"
         :x1="coords[currentMaps[i - 1]][0]"
         :y1="coords[currentMaps[i - 1]][1]"
@@ -238,10 +261,47 @@ function writeHistory(){
       </g>
     </svg>
     <blurScreen/>
-    <div class="settings-menu" >
-      <g  class="settings-block">
-      <emptyBlock/> 
+    <div v-if="settingsMenu" @click="toggleSettingsMenu(); animateCog(settingsMenu); animateBlur(settingsMenu)" style="width: 100vw; height: 100vh; position: absolute;"></div>
+    <div class="settings-menu">
+      <g class="settings-block">
+          <emptyBlock class="settings-text" @click="resetHistory();">          
+            <text 
+                text-anchor="middle"
+                dominant-baseline="middle"
+                font-size="4"
+                x="19.84375"
+                y="5.291666">
+              Clear history
+          </text></emptyBlock>
+
       </g>
+      <g class="settings-block">
+        <emptyBlock class="settings-text">          
+          <text v-if="editingCooldown==false" @click="editingCooldown=true"
+              text-anchor="middle"
+              dominant-baseline="middle"
+              font-size="4"
+              x="19.84375"
+              y="5.291666">
+              Edit cooldown 
+          </text>
+
+            <polygon points="3,5 8,8 8,2" v-if="editingCooldown==true" @click="editCooldown(-1)"></polygon>
+            <polygon points="37,5 32,8 32,2" v-if="editingCooldown==true" @click="editCooldown(1)"></polygon>
+
+          <text v-if="editingCooldown==true"
+                text-anchor="middle"
+                dominant-baseline="middle"
+                font-size="4"
+                x="19.84375"
+                y="5.291666">
+               {{cooldown}} 
+          </text>
+          
+        </emptyBlock>
+
+      </g>
+     
     </div>
     <cog @click="toggleSettingsMenu(); animateCog(settingsMenu); animateBlur(settingsMenu)"/>
   </div>
@@ -306,6 +366,14 @@ function writeHistory(){
   font-size: 2rem;
   font-weight: bold;
 }
+.settings-text{
+  font-family: ITBrush-Flare;
+  fill: #f0c711;
+}
+.settings-text:hover{
+  fill:#fad948
+}
+
 
 .content{
   display: flex;

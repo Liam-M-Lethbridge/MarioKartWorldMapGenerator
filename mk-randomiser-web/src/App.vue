@@ -39,6 +39,7 @@ function toggleSettingsMenu(){
 
   if (settingsMenu.value){
     writeCooldown()
+    editingCooldown.value=false
   }
   settingsMenu.value = !settingsMenu.value;
 }
@@ -290,8 +291,10 @@ function writeHistory(){
                 Edit cooldown 
             </text>
 
-              <polygon points="3,5 8,8 8,2" v-if="editingCooldown==true" @click="editCooldown(-1)"></polygon>
-              <polygon points="37,5 32,8 32,2" v-if="editingCooldown==true" @click="editCooldown(1)"></polygon>
+            <circle cx="6" cy="5" r="4" fill="#FFFFFF00" @click="editCooldown(-1)"></circle>
+            <polygon points="3,5 8,8 8,2" v-if="editingCooldown==true" @click="editCooldown(-1)"></polygon>
+            <circle cx="34" cy="5" r="4" fill="#FFFFFF00" @click="editCooldown(-1)"></circle>            
+            <polygon points="37,5 32,8 32,2" v-if="editingCooldown==true" @click="editCooldown(1)"></polygon>
 
             <text v-if="editingCooldown==true"
                   text-anchor="middle"

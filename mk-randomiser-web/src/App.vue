@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { coords, colours } from './data/mapData';
-import { ref, onMounted, computed, nextTick } from 'vue';
+import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import { animate, onScroll, stagger } from 'animejs';
 import {
   getMaps,
@@ -21,14 +21,14 @@ interface MapData {
   map_name: string;
   since_last_played: number;
 }
-
-var settingsMenu = ref(false); // boolean keeps track of if the settings menu is open or closed
+const prevMapCount = ref(0);
+const settingsMenu = ref(false); // boolean keeps track of if the settings menu is open or closed
 
 const rectEls = ref<SVGGElement[]>([]) // array of the rectangles
 
-const mapOptions = [1, 3, 4, 5, 6, 8, 12, 16, 32]; // for choosing the number of maps to generate
+const mapOptions = [1, 3, 4, 5, 6, 8, 12, 16]; // for choosing the number of maps to generate
 var mapIndex = 0; // for indexing mapOptions
-const mapCount = ref(1) // the numper of maps to generate
+const mapCount = ref(0) // the numper of maps to generate
 let lastWheelTime = 0;
 
 const svgSize = ref(800); // size of the map names svg
@@ -48,6 +48,8 @@ const cooldown = ref(6);
 const editingCooldown = ref(false)
 
 let lastClickTime = 0; // last time the map was clicked
+
+const previousRects = ref<{ id: number; x: number; y: number; angle: number }[]>([]);
 
 // function toggles the settings menu. When menu is closed, the cooldown counter is updated according to the user's choice
 function toggleSettingsMenu(){
@@ -79,26 +81,23 @@ function handleWheel(event: WheelEvent) {
   event.preventDefault();
 
   const now = Date.now();
-
-  if (now - lastWheelTime < 300) {
+  if (now - lastWheelTime < 500) return;
+  if (now - lastClickTime < mapCount.value*160) {
     return;
   }
-
   lastWheelTime = now;
 
+  previousRects.value = [...positionedRects.value];
+
   if (event.deltaY > 0) {
-    mapIndex = Math.min(7, mapIndex + 1);
+    mapIndex = Math.min(mapOptions.length - 1, mapIndex + 1);
   } else {
     mapIndex = Math.max(0, mapIndex - 1);
   }
+
   mapCount.value = mapOptions[mapIndex];
-  positionedRects.value = calculateRectPositions()
-  animate(".rect", {
-  width: [{ to: '+=10px', ease: 'outExpo', duration: 100 },
-    { to: '-=10px', ease: 'outExpo', duration: 100 }
-  ],
-})
 }
+
 
 // Function calculates the positions of the .rect elements in the map name SVG
 function calculateRectPositions() {
@@ -147,8 +146,8 @@ async function getCooldown() {
 // Function generates a new set of maps
 async function generateSet() {
   const now = Date.now();
-
-  if (now - lastClickTime < 600) {
+  if (now - lastWheelTime < 500) return;
+  if (now - lastClickTime < mapCount.value*160) {
     return;
   }
 
@@ -199,6 +198,63 @@ function writeHistory(){
 }
 
 
+watch(mapCount, async (newCount, oldCount) => {
+  prevMapCount.value = oldCount;
+
+  const oldPositions = [...positionedRects.value];
+  positionedRects.value = calculateRectPositions();
+  await nextTick();
+  rectEls.value = rectEls.value.slice(0, newCount);
+
+  animateRects(oldPositions, positionedRects.value, oldCount, newCount);
+});
+
+
+function animateRects(
+  oldPositions: { id: number; x: number; y: number; angle: number }[],
+  newPositions: { id: number; x: number; y: number; angle: number }[],
+  oldCount: number,
+  newCount: number
+) {
+  const rects = rectEls.value;
+
+  for (let i = 0; i < Math.min(oldCount, newCount); i++) {
+    const oldPos = oldPositions[i];
+    const newPos = newPositions[i];
+    const el = rects[i];
+
+    if (!el || !oldPos || !newPos) continue;
+
+
+    // for all pre-existing rects, we animate them to their new positions
+    animate(el, {
+      translateX: [oldPos.x - 75, newPos.x - 75],
+      translateY: [oldPos.y - 20, newPos.y - 20],
+      duration: 500,
+      ease: 'outExpo'
+    });
+  }
+
+  // for new rects, we spawn em in
+  if (newCount > oldCount) {
+    for (let i = oldCount; i < newCount; i++) {
+      const newPos = newPositions[i];
+      const el = rects[i];
+      if (!el) continue;
+
+      animate(el, {
+        scale: [0, 1],
+        x: newPos.x - 75,
+        y:newPos.y - 20,
+        duration: 350,
+        ease: 'outBack',
+        delay: (i - oldCount) * 50
+      });
+    }
+  }
+}
+
+
 onMounted(async () => {
   await getProbs();
   await getCooldown();
@@ -212,7 +268,6 @@ onMounted(async () => {
 <template>
   <div class="background">
     <div class="content">
-      <blurScreen/>
       <MKMap @click="generateSet()"  @wheel="handleWheel" class="map"/>
         
       <svg class="map-overlay" viewBox="0 0 480 480">
@@ -244,25 +299,30 @@ onMounted(async () => {
         </g>
       </svg>
       <svg class="overlay" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet">
-        <g v-for="rect in positionedRects" :key="rect.id" class="rect" :ref="el => setRectRef(el, rect.id)">
+        <g
+          v-for="rect in positionedRects"
+          :key="rect.id"
+          class="rect"
+          :ref="el => setRectRef(el, rect.id)"
+        >
+
           <questionBlock class="block"
             v-if="rect.id >= currentMaps.length" 
-            :x="rect.x - 75"
-            :y="rect.y - 20"/>
-          <emptyBlock class="block"
-            v-if="rect.id < currentMaps.length" 
-            :x="rect.x - 75"
-            :y="rect.y - 20"/>
+            />
+          <emptyBlock class="block" v-if="rect.id < currentMaps.length">
+              <text class="map-name" v-if="rect.id < currentMaps.length"
+                text-anchor="middle"
+                dominant-baseline="middle"
+                font-size="4"
+                x="19.84375"
+                y="5.291666">
+              
+                {{ currentMaps[rect.id] }}
+              </text>
+          </emptyBlock>
 
-          <text class="map-name" v-if="rect.id < currentMaps.length"
-            :x="rect.x"
-            :y="rect.y"
-            text-anchor="middle"
-            dominant-baseline="middle"
-            font-size="16"
-          >
-            {{ currentMaps[rect.id] }}
-          </text>
+          
+
         </g>
       </svg>
       
@@ -331,9 +391,11 @@ onMounted(async () => {
   flex-direction: column;
   justify-content: space-around;
   width:fit-content;
-  background-color: #4d4d4d;
+  /* background-color: #ffffff; */
+  background-image: linear-gradient(to bottom, #282828, #311313);
   left: 100vw;
   height: 100vh;
+  border-left: #111111 solid 2px
 }
 
 .settings-block{
